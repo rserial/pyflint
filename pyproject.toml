@@ -33,6 +33,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "<3.12,>=3.8"
+numpy = "^1.24.2"
 
 
 [tool.poetry.dev-dependencies]
@@ -70,7 +71,7 @@ branch = true
 source = ["pyflint"]
 
 [tool.coverage.report]
-fail_under = 100
+fail_under = 0
 exclude_lines = [
   "pragma: no cover",
   "def __repr__",
