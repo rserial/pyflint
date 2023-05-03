@@ -168,12 +168,12 @@ class Flint:
         if kernel_name in kernel_functions:
             kernel_function = kernel_functions[kernel_name]
 
-            if len(kernel_function) == 2 and t1range and t2range and self.signal.tau2:
+            if len(kernel_function) == 2 and t2range and self.signal.tau2:
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = logarithm_t_range(t2range, kernel_shape[1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
                 self.t2kernel = self.set_kernel(kernel_function[1], self.signal.tau2, self.t2axis)
-            elif len(kernel_function) == 1 and t1range:
+            elif len(kernel_function) == 1:
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = np.array([1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
@@ -245,8 +245,8 @@ class Flint:
         """
         plotting_functions = {
             "T2": plot_T2_ILT,
-            "T1IR": plot_T2_ILT,
-            "T1SR": plot_T2_ILT,
+            "T1IR": plot_T1IR_ILT,
+            "T1SR": plot_T1SR_ILT,
         }
 
         if self.kernel_type in plotting_functions:
@@ -347,8 +347,6 @@ def plot_T2_ILT(
     fig = go.Figure(data=[trace], layout=layout)
 
     fig.update_layout(width=500, height=500, template="pyflint_plotly_template")
-    # Show the figure
-    fig.show()
     return fig
 
 
@@ -368,7 +366,6 @@ def plot_T1IR_ILT(
     """
     fig = plot_T2_ILT(SS, t1axis, t2axis=None)
     fig.update_layout(title="1D Inverse Laplace Inversion - T1 decay")
-    fig.show()
     return fig
 
 
@@ -387,7 +384,6 @@ def plot_T1SR_ILT(
         fig(go.Figure): output figure
     """
     fig = plot_T1IR_ILT(SS, t1axis, t2axis=None)
-    fig.show()
     return fig
 
 
@@ -505,7 +501,7 @@ def generate_t2_distribution_signal_decay(
             np.log10(t2_axis_lim[1]),
             t2_dimension,
         )
-        kernel = kernel_function(signal_time_axis, ILT_time_axis)
+        kernel = set_kernel(kernel_function[0], signal_time_axis, ILT_time_axis)
 
         # building T2 time distribution
         t2_distribution_intensity = np.zeros((t2_dimension))
@@ -569,6 +565,16 @@ def generate_t2_distribution_signal_decay(
             fig.show()
 
     return signal_time_axis, signal_with_noise, ILT_time_axis, t2_distribution_intensity
+
+
+def set_kernel(
+    kernel: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    tau: np.ndarray,
+    t: np.ndarray,
+) -> np.ndarray:
+    """Sets a kernel for given tau and T arrays."""
+    K = kernel(tau, t)
+    return K
 
 
 # Load the simple_white template
