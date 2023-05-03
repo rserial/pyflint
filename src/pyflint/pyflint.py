@@ -146,6 +146,9 @@ class Flint:
             tol (float): The relative change between successive calculations for exit.
             maxiter (int): The maximum number of iterations. Defaults to 100001.
             progress (int): The number of iterations between progress displays.
+
+        Raises:
+            ValueError: If kernel_name is not in kernel_functions dictionary.
         """
         kernel_functions: dict[str, list] = {
             "T1IRT2": [kernel_t1_IR, kernel_t2],
@@ -164,6 +167,12 @@ class Flint:
         self.progress = progress
         self.resida = np.full((maxiter), np.nan)
         self.dim_kernel2d = kernel_shape
+
+        if kernel_name not in kernel_functions:
+            available_options = ", ".join(kernel_functions.keys())
+            raise ValueError(
+                f"Invalid kernel name '{kernel_name}'. Available options are: {available_options}"
+            )
 
         if kernel_name in kernel_functions:
             kernel_function = kernel_functions[kernel_name]
@@ -477,12 +486,21 @@ def generate_t2_distribution_signal_decay(
         signal_with_noise (np.array): NMR signal with noise.
         t2_distribution_time_axis (np.array): time points used in the true relaxation map.
         t2_distribution_intensity (np.array): true relaxation map that resembles a smiley face.
+
+    Raises:
+        ValueError: If kernel_name is not in kernel_functions dictionary.
     """
     kernel_functions: dict[str, list] = {
         "T1IR": [kernel_t1_IR],
         "T1SR": [kernel_t1_SR],
         "T2": [kernel_t2],
     }
+
+    if kernel_name not in kernel_functions:
+        available_options = ", ".join(kernel_functions.keys())
+        raise ValueError(
+            f"Invalid kernel name '{kernel_name}'. Available options are: {available_options}"
+        )
 
     if kernel_name in kernel_functions:
         kernel_function = kernel_functions[kernel_name]
