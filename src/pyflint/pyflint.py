@@ -18,9 +18,9 @@ from collections.abc import Callable
 from typing import Optional
 
 import numpy as np
-import plotly.graph_objects as go
-import plotly.io as pio
-from plotly.subplots import make_subplots
+import plotly.graph_objects as go  # type: ignore
+import plotly.io as pio  # type: ignore
+from plotly.subplots import make_subplots  # type: ignore
 
 
 def kernel_t2(tau: np.ndarray, t2: np.ndarray) -> np.ndarray:
@@ -126,7 +126,7 @@ class Flint:
         kernel_shape: tuple[int, int],
         kernel_name: str,
         alpha: float,
-        t1range: Optional[np.ndarray] = None,
+        t1range: Optional[np.ndarray],
         t2range: Optional[np.ndarray] = None,
         SS: Optional[np.ndarray] = None,
         tol: float = 1e-5,
@@ -147,7 +147,7 @@ class Flint:
             maxiter (int): The maximum number of iterations. Defaults to 100001.
             progress (int): The number of iterations between progress displays.
         """
-        kernel_functions = {
+        kernel_functions: dict[str, list] = {
             "T1IRT2": [kernel_t1_IR, kernel_t2],
             "T1SRT2": [kernel_t1_SR, kernel_t2],
             "T2T2": [kernel_t2, kernel_t2],
@@ -168,12 +168,12 @@ class Flint:
         if kernel_name in kernel_functions:
             kernel_function = kernel_functions[kernel_name]
 
-            if len(kernel_function) == 2:
+            if len(kernel_function) == 2 and t1range and t2range and self.signal.tau2:
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = logarithm_t_range(t2range, kernel_shape[1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
                 self.t2kernel = self.set_kernel(kernel_function[1], self.signal.tau2, self.t2axis)
-            elif len(kernel_function) == 1:
+            elif len(kernel_function) == 1 and t1range:
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = np.array([1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
@@ -274,7 +274,7 @@ class Flint:
         return LL
 
     def update_SL(
-        self, SL: np.ndarray, K1K1: np.ndarray, K2K2: np.ndarray, LL: np.ndarray
+        self, SL: np.ndarray, K1K1: np.ndarray, K2K2: np.ndarray, LL: float
     ) -> np.ndarray:
         """
         Update the SVD coefficients of the SS matrix.
@@ -283,7 +283,7 @@ class Flint:
             SL (np.ndarray): The SVD coefficients of the SS matrix.
             K1K1 (np.ndarray): The Gram matrix of the t1 kernel.
             K2K2 (np.ndarray): The Gram matrix of the t2 kernel.
-            LL (np.ndarray): The Lipschitz constant.
+            LL (float): The Lipschitz constant.
 
         Returns:
             np.ndarray: The updated SVD coefficients of the SS matrix.
@@ -345,7 +345,7 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
 
 def generate_smilyface_signal(
     N1: int, N2: int, Nx: int, Ny: int, tau1min: float, tau1max: float, deltatau2: float
-) -> tuple[np.array, np.array, np.array, np.array, np.array]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generates something.
 
     Args:
@@ -407,10 +407,10 @@ def generate_t2_distribution_signal_decay(
     echo_time: float,
     normalized_noise: float,
     t2_distribution_dimension: int,
-    t2_distribution_axislim: np.array,
-    amplitudes: np.array,
-    centers: np.array,
-    widths: np.array,
+    t2_distribution_axislim: np.ndarray,
+    amplitudes: np.ndarray,
+    centers: np.ndarray,
+    widths: np.ndarray,
     plot: Optional[bool] = False,
 ) -> tuple:
     """Generates a 1D NMR signal with noise from a 'true' T2 relaxation time distribution.
