@@ -491,7 +491,7 @@ def generate_t2_distribution_signal_decay(
             delta_time = (signal_time_lim[1] - signal_time_lim[0]) / signal_num_points
             signal_time_axis = (1 + np.arange(signal_num_points)) * delta_time
         if kernel_name == "T1IR" or "T1SR":
-            ILT_time_axis = np.logspace(
+            signal_time_axis = np.logspace(
                 np.log10(signal_time_lim[0]),
                 np.log10(signal_time_lim[1]),
                 signal_num_points,
