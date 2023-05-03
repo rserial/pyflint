@@ -455,13 +455,13 @@ def generate_smilyface_signal(
     return tau1, tau2, signal_with_noise, T1a, T2a, Ftrue
 
 
-def generate_t2_distribution_signal_decay(
+def generate_t_distribution_signal_decay(
     signal_num_points: int,
     signal_time_lim: np.ndarray,
     kernel_name: str,
     normalized_noise: float,
-    t2_dimension: int,
-    t2_axis_lim: np.ndarray,
+    t_dimension: int,
+    t_axis_lim: np.ndarray,
     amplitudes: np.ndarray,
     centers: np.ndarray,
     widths: np.ndarray,
@@ -474,8 +474,8 @@ def generate_t2_distribution_signal_decay(
         signal_time_lim (np.array): signal time limits. [tinit, tend].
         kernel_name (str): name of the kernel function used.
         normalized_noise(float): normalized signal noise.
-        t2_dimension(int): dimension of t2 relaxation time distribution.
-        t2_axis_lim(np.array): time limits of the t2 relaxation time distribution.
+        t_dimension(int): dimension of t2 relaxation time distribution.
+        t_axis_lim(np.array): time limits of the t2 relaxation time distribution.
         amplitudes (np.array): amplitudes of the Gaussian functions.
         centers (np.array): centers of the Gaussian functions.
         widths (np.array): widths of the Gaussian functions.
@@ -515,14 +515,14 @@ def generate_t2_distribution_signal_decay(
                 signal_num_points,
             )
         ILT_time_axis = np.logspace(
-            np.log10(t2_axis_lim[0]),
-            np.log10(t2_axis_lim[1]),
-            t2_dimension,
+            np.log10(t_axis_lim[0]),
+            np.log10(t_axis_lim[1]),
+            t_dimension,
         )
         kernel = set_kernel(kernel_function[0], signal_time_axis, ILT_time_axis)
 
         # building T2 time distribution
-        t2_distribution_intensity = np.zeros((t2_dimension))
+        t2_distribution_intensity = np.zeros((t_dimension))
 
         # Infer the number of populations from the length of distribution_params
         num_populations = len(amplitudes)
