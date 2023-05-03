@@ -245,7 +245,10 @@ class Flint:
         """
         plotting_functions = {
             "T2": plot_T2_ILT,
+            "T1IR": plot_T2_ILT,
+            "T1SR": plot_T2_ILT,
         }
+
         if self.kernel_type in plotting_functions:
             figure = plotting_functions[self.kernel_type](self.SS, self.t1axis, self.t2axis)
             return figure
@@ -341,6 +344,18 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
     fig.update_layout(width=500, height=500, template="pyflint_plotly_template")
     # Show the figure
     fig.show()
+
+
+def plot_T1IR_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None) -> None:
+    """
+    Plot the 1D Inverse Laplace Inversion - T1IR decay.
+
+    Args:
+        SS (np.ndarray): Starting estimate.
+        t1axis (np.ndarray): The T1 relaxation axis.
+        t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+    """
+    plot_T2_ILT(SS, t1axis, t2axis=None)
 
 
 def generate_smilyface_signal(
