@@ -33,7 +33,11 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = "<3.12,>=3.8"
-numpy = "^1.24.2"
+matplotlib = "^3.7.1"
+numpy = "^1.24.3"
+plotly = "^5.14.1"
+scipy = "^1.10.1"
+nbformat = "^5.8.0"
 
 
 [tool.poetry.dev-dependencies]
@@ -62,6 +66,9 @@ xdoctest = "^1.1.1"
 coverage = {version = "^7.2.1", extras = ["toml"]}
 pytest-cov = "^3.0.0"
 watchdog = {version = "^2.3.1", extras = ["watchmedo"]}
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.22.0"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -96,7 +103,7 @@ extended_default_ignore = []
 
 [tool.flakeheaven.plugins]
 pyflakes = ["+*"]
-pycodestyle = ["+*"]
+pycodestyle = ["+*", "-W503"]
 mccabe = ["+*"]
 flake8-annotations = ["+*", "-ANN1??", "-ANN401"]
 flake8-docstrings = ["+*", "-D212"]
