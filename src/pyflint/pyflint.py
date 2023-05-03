@@ -306,7 +306,9 @@ class Flint:
         return K
 
 
-def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None) -> None:
+def plot_T2_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
     """
     Plot the 1D Inverse Laplace Inversion - T2 decay.
 
@@ -314,6 +316,9 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
         SS (np.ndarray): Starting estimate.
         t1axis (np.ndarray): The T1 relaxation axis.
         t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
     """
     # Define the data
     x = t1axis.squeeze()
@@ -344,9 +349,12 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
     fig.update_layout(width=500, height=500, template="pyflint_plotly_template")
     # Show the figure
     fig.show()
+    return fig
 
 
-def plot_T1IR_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None) -> None:
+def plot_T1IR_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
     """
     Plot the 1D Inverse Laplace Inversion - T1IR decay.
 
@@ -354,8 +362,33 @@ def plot_T1IR_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarra
         SS (np.ndarray): Starting estimate.
         t1axis (np.ndarray): The T1 relaxation axis.
         t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
     """
-    plot_T2_ILT(SS, t1axis, t2axis=None)
+    fig = plot_T2_ILT(SS, t1axis, t2axis=None)
+    fig.update_layout(title="1D Inverse Laplace Inversion - T1 decay")
+    fig.show()
+    return fig
+
+
+def plot_T1SR_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
+    """
+    Plot the 1D Inverse Laplace Inversion - T1IR decay.
+
+    Args:
+        SS (np.ndarray): Starting estimate.
+        t1axis (np.ndarray): The T1 relaxation axis.
+        t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
+    """
+    fig = plot_T1IR_ILT(SS, t1axis, t2axis=None)
+    fig.show()
+    return fig
 
 
 def generate_smilyface_signal(
