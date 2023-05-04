@@ -146,6 +146,9 @@ class Flint:
             tol (float): The relative change between successive calculations for exit.
             maxiter (int): The maximum number of iterations. Defaults to 100001.
             progress (int): The number of iterations between progress displays.
+
+        Raises:
+            ValueError: If kernel_name is not in kernel_functions dictionary.
         """
         kernel_functions: dict[str, list] = {
             "T1IRT2": [kernel_t1_IR, kernel_t2],
@@ -165,6 +168,12 @@ class Flint:
         self.resida = np.full((maxiter), np.nan)
         self.dim_kernel2d = kernel_shape
 
+        if kernel_name not in kernel_functions:
+            available_options = ", ".join(kernel_functions.keys())
+            raise ValueError(
+                f"Invalid kernel name '{kernel_name}'. Available options are: {available_options}"
+            )
+
         if kernel_name in kernel_functions:
             kernel_function = kernel_functions[kernel_name]
 
@@ -173,7 +182,7 @@ class Flint:
                 self.t2axis = logarithm_t_range(t2range, kernel_shape[1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
                 self.t2kernel = self.set_kernel(kernel_function[1], self.signal.tau2, self.t2axis)
-            elif len(kernel_function) == 1 and t1range:
+            elif len(kernel_function) == 1 and t1range is not None:
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = np.array([1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
@@ -245,7 +254,10 @@ class Flint:
         """
         plotting_functions = {
             "T2": plot_T2_ILT,
+            "T1IR": plot_T1IR_ILT,
+            "T1SR": plot_T1SR_ILT,
         }
+
         if self.kernel_type in plotting_functions:
             figure = plotting_functions[self.kernel_type](self.SS, self.t1axis, self.t2axis)
             return figure
@@ -303,7 +315,9 @@ class Flint:
         return K
 
 
-def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None) -> None:
+def plot_T2_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
     """
     Plot the 1D Inverse Laplace Inversion - T2 decay.
 
@@ -311,6 +325,9 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
         SS (np.ndarray): Starting estimate.
         t1axis (np.ndarray): The T1 relaxation axis.
         t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
     """
     # Define the data
     x = t1axis.squeeze()
@@ -339,8 +356,44 @@ def plot_T2_ILT(SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray]
     fig = go.Figure(data=[trace], layout=layout)
 
     fig.update_layout(width=500, height=500, template="pyflint_plotly_template")
-    # Show the figure
-    fig.show()
+    return fig
+
+
+def plot_T1IR_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
+    """
+    Plot the 1D Inverse Laplace Inversion - T1IR decay.
+
+    Args:
+        SS (np.ndarray): Starting estimate.
+        t1axis (np.ndarray): The T1 relaxation axis.
+        t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
+    """
+    fig = plot_T2_ILT(SS, t1axis, t2axis=None)
+    fig.update_layout(title="1D Inverse Laplace Inversion - T1 decay")
+    return fig
+
+
+def plot_T1SR_ILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None
+) -> go.Figure:
+    """
+    Plot the 1D Inverse Laplace Inversion - T1IR decay.
+
+    Args:
+        SS (np.ndarray): Starting estimate.
+        t1axis (np.ndarray): The T1 relaxation axis.
+        t2axis (Optional[np.ndarray]): The T2 relaxation axis. Defaults to None.
+
+    Returns:
+        fig(go.Figure): output figure
+    """
+    fig = plot_T1IR_ILT(SS, t1axis, t2axis=None)
+    return fig
 
 
 def generate_smilyface_signal(
@@ -402,12 +455,13 @@ def generate_smilyface_signal(
     return tau1, tau2, signal_with_noise, T1a, T2a, Ftrue
 
 
-def generate_t2_distribution_signal_decay(
+def generate_t_distribution_signal_decay(
     signal_num_points: int,
-    echo_time: float,
+    signal_time_lim: np.ndarray,
+    kernel_name: str,
     normalized_noise: float,
-    t2_distribution_dimension: int,
-    t2_distribution_axislim: np.ndarray,
+    t_dimension: int,
+    t_axis_lim: np.ndarray,
     amplitudes: np.ndarray,
     centers: np.ndarray,
     widths: np.ndarray,
@@ -417,10 +471,11 @@ def generate_t2_distribution_signal_decay(
 
     Args:
         signal_num_points (int): number of time points to use in the NMR signal.
-        echo_time (float): time between consecutive echo signals in the NMR signal.
+        signal_time_lim (np.array): signal time limits. [tinit, tend].
+        kernel_name (str): name of the kernel function used.
         normalized_noise(float): normalized signal noise.
-        t2_distribution_dimension(int): dimension of t2 relaxation time distribution.
-        t2_distribution_axislim(np.array): time limits of the t2 relaxation time distribution.
+        t_dimension(int): dimension of t2 relaxation time distribution.
+        t_axis_lim(np.array): time limits of the t2 relaxation time distribution.
         amplitudes (np.array): amplitudes of the Gaussian functions.
         centers (np.array): centers of the Gaussian functions.
         widths (np.array): widths of the Gaussian functions.
@@ -431,77 +486,113 @@ def generate_t2_distribution_signal_decay(
         signal_with_noise (np.array): NMR signal with noise.
         t2_distribution_time_axis (np.array): time points used in the true relaxation map.
         t2_distribution_intensity (np.array): true relaxation map that resembles a smiley face.
+
+    Raises:
+        ValueError: If kernel_name is not in kernel_functions dictionary.
     """
-    signal_time_axis = (1 + np.arange(signal_num_points)) * echo_time
-    ILT_time_axis = np.logspace(
-        np.log10(t2_distribution_axislim[0]),
-        np.log10(t2_distribution_axislim[1]),
-        t2_distribution_dimension,
-    )
-    kernel = np.exp(-np.outer(signal_time_axis, 1 / ILT_time_axis))
+    kernel_functions: dict[str, list] = {
+        "T1IR": [kernel_t1_IR],
+        "T1SR": [kernel_t1_SR],
+        "T2": [kernel_t2],
+    }
 
-    # building T2 time distribution
-    t2_distribution_intensity = np.zeros((t2_distribution_dimension))
-
-    # Infer the number of populations from the length of distribution_params
-    num_populations = len(amplitudes)
-    # Generate the T2 distribution
-    for i in range(num_populations):
-        t2_distribution_intensity += amplitudes[i] * np.exp(
-            -((ILT_time_axis - centers[i]) ** 2) / (2 * widths[i] ** 2)
+    if kernel_name not in kernel_functions:
+        available_options = ", ".join(kernel_functions.keys())
+        raise ValueError(
+            f"Invalid kernel name '{kernel_name}'. Available options are: {available_options}"
         )
 
-    signal = t2_distribution_intensity @ kernel.T
-    sigma = np.max(signal) * normalized_noise
-    noise = sigma * np.random.randn(signal.shape[0])
-    signal_with_noise = signal + noise
+    if kernel_name in kernel_functions:
+        kernel_function = kernel_functions[kernel_name]
 
-    if plot:
-        # Create a subplot with two plots
-        fig = make_subplots(
-            rows=1,
-            cols=2,
-            subplot_titles=(
-                "Simulated relaxation time distribution",
-                "Simulated NMR signal + noise",
-            ),
-            column_widths=[0.5, 0.5],
+        if kernel_name == "T2":
+            delta_time = (signal_time_lim[1] - signal_time_lim[0]) / signal_num_points
+            signal_time_axis = (1 + np.arange(signal_num_points)) * delta_time
+        if kernel_name == "T1IR" or "T1SR":
+            signal_time_axis = np.logspace(
+                np.log10(signal_time_lim[0]),
+                np.log10(signal_time_lim[1]),
+                signal_num_points,
+            )
+        ILT_time_axis = np.logspace(
+            np.log10(t_axis_lim[0]),
+            np.log10(t_axis_lim[1]),
+            t_dimension,
         )
+        kernel = set_kernel(kernel_function[0], signal_time_axis, ILT_time_axis)
 
-        # Add the first plot (true relaxation map)
-        fig.add_trace(
-            go.Scatter(x=ILT_time_axis, y=t2_distribution_intensity, name="T2 distribution"),
-            row=1,
-            col=1,
-        )
-        fig.update_xaxes(
-            title_text="Time (s)",
-            type="log",
-            tickvals=[
-                round(x, 4)
-                for x in np.logspace(
-                    np.log10(np.min(ILT_time_axis)), np.log10(np.max(ILT_time_axis)), 3
-                )
-            ],
-            tickformat=".1e",
-            row=1,
-            col=1,
-        )
-        fig.update_yaxes(title_text="Intensity (a.u)", row=1, col=1)
+        # building T2 time distribution
+        t2_distribution_intensity = np.zeros((t_dimension))
 
-        # Add the second plot (NMR signal with noise)
-        fig.add_trace(
-            go.Scatter(x=signal_time_axis, y=signal_with_noise, name="NMR signal + noise"),
-            row=1,
-            col=2,
-        )
-        fig.update_xaxes(title_text="Time (s)", row=1, col=2)
-        fig.update_yaxes(title_text="Signal amplitude", row=1, col=2)
+        # Infer the number of populations from the length of distribution_params
+        num_populations = len(amplitudes)
+        # Generate the T2 distribution
+        for i in range(num_populations):
+            t2_distribution_intensity += amplitudes[i] * np.exp(
+                -((ILT_time_axis - centers[i]) ** 2) / (2 * widths[i] ** 2)
+            )
 
-        fig.update_layout(width=1000, height=500, template="pyflint_plotly_template")
-        fig.show()
+        signal = t2_distribution_intensity @ kernel.T
+        sigma = np.max(signal) * normalized_noise
+        noise = sigma * np.random.randn(signal.shape[0])
+        signal_with_noise = signal + noise
+
+        if plot:
+            # Create a subplot with two plots
+            fig = make_subplots(
+                rows=1,
+                cols=2,
+                subplot_titles=(
+                    "Simulated relaxation time distribution",
+                    "Simulated NMR signal + noise",
+                ),
+                column_widths=[0.5, 0.5],
+            )
+
+            # Add the first plot (true relaxation map)
+            fig.add_trace(
+                go.Scatter(x=ILT_time_axis, y=t2_distribution_intensity, name="T2 distribution"),
+                row=1,
+                col=1,
+            )
+            fig.update_xaxes(
+                title_text="Time (s)",
+                type="log",
+                tickvals=[
+                    round(x, 4)
+                    for x in np.logspace(
+                        np.log10(np.min(ILT_time_axis)), np.log10(np.max(ILT_time_axis)), 3
+                    )
+                ],
+                tickformat=".1e",
+                row=1,
+                col=1,
+            )
+            fig.update_yaxes(title_text="Intensity (a.u)", row=1, col=1)
+
+            # Add the second plot (NMR signal with noise)
+            fig.add_trace(
+                go.Scatter(x=signal_time_axis, y=signal_with_noise, name="NMR signal + noise"),
+                row=1,
+                col=2,
+            )
+            fig.update_xaxes(title_text="Time (s)", row=1, col=2)
+            fig.update_yaxes(title_text="Signal amplitude", row=1, col=2)
+
+            fig.update_layout(width=1000, height=500, template="pyflint_plotly_template")
+            fig.show()
 
     return signal_time_axis, signal_with_noise, ILT_time_axis, t2_distribution_intensity
+
+
+def set_kernel(
+    kernel: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    tau: np.ndarray,
+    t: np.ndarray,
+) -> np.ndarray:
+    """Sets a kernel for given tau and T arrays."""
+    K = kernel(tau, t)
+    return K
 
 
 # Load the simple_white template
