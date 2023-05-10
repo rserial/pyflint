@@ -84,14 +84,45 @@ class NMRsignal:
         return cls(signal, tau1, tau2)
 
     @classmethod
-    def load_from_txtfile(cls, file_path: str) -> NMRsignal:
+    def load_from_1d_txtfile(cls, file_path: str) -> NMRsignal:
         """Constructs an NMRsignal object from a file."""
         data = np.loadtxt(file_path)
-        # index = data[:,0]
-        tau1 = data[:, 1]
-        signal = data[:, 2] + 1j * data[:, 3] if data.shape[1] > 2 else data[:, 1:]
+        tau1 = data[:, 0]
+        signal = data[:, 1] + 1j * data[:, 2] if data.shape[1] > 1 else data[:, 1:]
         tau2 = None
         return cls.load_from_data(signal, tau1, tau2)
+
+    def save_to_1d_txtfile(self, file_path: str) -> None:
+        """Saves the NMRsignal object to a 1D txt file."""
+        signal = self.signal.ravel()
+        tau1 = self.tau1
+        data = np.column_stack((tau1, signal))
+        np.savetxt(file_path, data)
+
+    @classmethod
+    def average_signals(cls, dir_list: list[str]) -> NMRsignal:
+        """Averages a list of NMR signals from 1D txt files.
+
+        Args:
+            dir_list (List[str]): A list of file paths.
+
+        Returns:
+            NMRsignal: An NMRsignal object with the averaged signal.
+        """
+        signals = [cls.load_from_1d_txtfile(dir_path) for dir_path in dir_list]
+
+        average_real = np.zeros(signals[0].signal.size)
+        average_imag = np.zeros(signals[0].signal.size)
+
+        for signal in signals:
+            average_real += signal.signal.real.reshape(average_real.shape)
+            average_imag += signal.signal.imag.reshape(average_imag.shape)
+        average_signal = average_real + 1j * average_imag
+
+        average_signal /= len(signals)
+        tau1 = signals[0].tau1
+        tau2 = signals[0].tau2
+        return cls.load_from_data(average_signal, tau1, tau2)
 
 
 class Flint:
