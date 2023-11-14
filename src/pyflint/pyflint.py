@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go  # type: ignore
 import plotly.io as pio  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
@@ -61,48 +62,26 @@ def load_1d_decay(file_path: Path, file_name: str) -> tuple[np.ndarray, np.ndarr
     return time_axis, decay_data
 
 
-def perform_ilt_from_data(
-    sample_name: str,
-    decay: np.ndarray,
-    tau1: float,
-    dimKernel2D: int,
-    alpha: float,
-    kernel_name: str,
-    t1_range: tuple[float, float],
-    t2_range: tuple[float, float],
-    output_filepath: Path,
-    output_filename: str,
-) -> tuple[np.ndarray, np.ndarray]:
+def save_1d_decay_data(
+    save_dir: Path, time_scale: np.ndarray, decay: np.ndarray, filename: str
+) -> None:
     """
-    Perform Inverse Laplace Transform (ILT) on NMR signal data.
+    Save 1D decay data to a CSV file.
 
     Args:
-        sample_name (str): Name of the sample.
-        decay (np.ndarray): NMR signal data.
-        tau1 (float): Delay time in the experiment.
-        dimKernel2D (int): Dimension of the 2D kernel.
-        alpha (float): Regularization parameter.
-        kernel_name (str): Name of the kernel.
-        t1_range (tuple[float, float]): T1 range.
-        t2_range (tuple[float, float]): T2 range.
-        output_filepath (Path): Path to save the output file.
-        output_filename (str): Name of the output file.
-
-    Returns:
-        tuple[np.ndarray, np.ndarray]: T1 axis and the corresponding spectral density.
+        save_dir (Path): Directory where the file will be saved.
+        time_scale (np.ndarray): Time scale array.
+        decay (np.ndarray): 1D decay data.
+        filename (str): Name of the file to be saved.
     """
-    signal = NMRsignal.load_from_data(decay, tau1)
-
-    flint = Flint(signal, dimKernel2D, kernel_name, alpha, t1_range, t2_range)
-    flint.solve_flint()
-    fig_samplebase = flint.plot()
-    fig_samplebase.update_layout(title_text=f"1D ILT T2 decay - {sample_name}")
-    fig_samplebase.show()
-
-    t1_axis = np.squeeze(flint.t1axis)
-    SS = np.squeeze(flint.SS)
-    NMRsignal.save_to_1d_txtfile(output_filepath / output_filename, t1_axis, SS)
-    return t1_axis, SS
+    save_decay = {
+        "time [s]": time_scale,
+        "decay real [a.u]": np.real(decay),
+        "decay imag [a.u]": np.imag(decay),
+    }
+    df = pd.DataFrame(save_decay, columns=["time [s]", "decay real [a.u]", "decay imag [a.u]"])
+    df.to_csv(save_dir / filename, sep="\t", float_format="%10.4f", header=False, index=False)
+    print(f"Saved datafile: {filename}\n")
 
 
 class NMRsignal:
