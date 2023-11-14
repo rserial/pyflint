@@ -15,6 +15,7 @@ For more information on FLINT, see:
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -41,6 +42,67 @@ def kernel_t1_SR(tau: np.ndarray, t1: np.ndarray) -> np.ndarray:
 def logarithm_t_range(t_range: np.ndarray, kernel_dim: int) -> np.ndarray:
     """Generates a logarithmic time range."""
     return np.logspace(np.log10(t_range[0]), np.log10(t_range[1]), num=kernel_dim)
+
+
+def load_1d_decay(file_path: Path, file_name: str) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Load 1D decay data from a file.
+
+    Args:
+        file_path (Path): The path to the file.
+        file_name (str): The name of the file.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Time axis and decay data.
+    """
+    data = np.loadtxt(file_path / file_name, delimiter=",")
+    time_axis = data[:, 0] * 1e-6
+    decay_data = data[:, 1]
+    return time_axis, decay_data
+
+
+def perform_ilt_from_data(
+    sample_name: str,
+    signal: np.ndarray,
+    tau1: float,
+    dimKernel2D: int,
+    alpha: float,
+    kernel_name: str,
+    t1_range: tuple[float, float],
+    t2_range: tuple[float, float],
+    output_filepath: Path,
+    output_filename: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Perform Inverse Laplace Transform (ILT) on NMR signal data.
+
+    Args:
+        sample_name (str): Name of the sample.
+        signal (np.ndarray): NMR signal data.
+        tau1 (float): Delay time in the experiment.
+        dimKernel2D (int): Dimension of the 2D kernel.
+        alpha (float): Regularization parameter.
+        kernel_name (str): Name of the kernel.
+        t1_range (tuple[float, float]): T1 range.
+        t2_range (tuple[float, float]): T2 range.
+        output_filepath (Path): Path to save the output file.
+        output_filename (str): Name of the output file.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: T1 axis and the corresponding spectral density.
+    """
+    signal = NMRsignal.load_from_data(signal, tau1)
+
+    flint = Flint(signal, dimKernel2D, kernel_name, alpha, t1_range, t2_range)
+    flint.solve_flint()
+    fig_samplebase = flint.plot()
+    fig_samplebase.update_layout(title_text=f"1D ILT T2 decay - {sample_name}")
+    fig_samplebase.show()
+
+    t1_axis = np.squeeze(flint.t1axis)
+    SS = np.squeeze(flint.SS)
+    NMRsignal.save_to_1d_txtfile(output_filepath / output_filename, t1_axis, SS)
+    return t1_axis, SS
 
 
 class NMRsignal:
