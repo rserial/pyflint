@@ -14,8 +14,8 @@ For more information on FLINT, see:
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Optional
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 import plotly.graph_objects as go  # type: ignore
@@ -41,6 +41,23 @@ def kernel_t1_SR(tau: np.ndarray, t1: np.ndarray) -> np.ndarray:
 def logarithm_t_range(t_range: np.ndarray, kernel_dim: int) -> np.ndarray:
     """Generates a logarithmic time range."""
     return np.logspace(np.log10(t_range[0]), np.log10(t_range[1]), num=kernel_dim)
+
+
+def load_1d_decay(file_path: Path, file_name: str) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Load 1D decay data from a file.
+
+    Args:
+        file_path (Path): The path to the file.
+        file_name (str): The name of the file.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Time axis and decay data.
+    """
+    data = np.loadtxt(file_path / file_name, delimiter=",")
+    time_axis = data[:, 0]
+    decay_data = data[:, 1]
+    return time_axis, decay_data
 
 
 class NMRsignal:
@@ -283,10 +300,11 @@ class Flint:
         Returns:
             A plotly figure object.
         """
-        plotting_functions = {
+        plotting_functions: Dict[str, Callable[..., Tuple[Any, ...]]] = {
             "T2": plot_T2_ILT,
             "T1IR": plot_T1IR_ILT,
             "T1SR": plot_T1SR_ILT,
+            "T1IRT2": plot_2DILT,
         }
 
         if self.kernel_type in plotting_functions:
@@ -387,6 +405,110 @@ def plot_T2_ILT(
     fig = go.Figure(data=[trace], layout=layout)
 
     fig.update_layout(width=500, height=500, template="pyflint_plotly_template")
+    return fig
+
+
+def plot_2DILT(
+    SS: np.ndarray, t1axis: np.ndarray, t2axis: Optional[np.ndarray] = None, ncontours: int = 10
+) -> go.Figure:
+    """
+    Plot a 2D ILT map.
+
+    Args:
+        SS (np.ndarray): 2D array of intensity values.
+        t1axis (np.ndarray): Array representing the T1 axis.
+        t2axis (Optional[np.ndarray]): Array representing the T2 axis.
+        ncontours (int): Number of contours for the plot.
+
+    Returns:
+        go.Figure: Plotly figure object.
+    """
+    fig = make_subplots(rows=1, cols=1)
+
+    # Create an intensity map subplot
+    fig.add_trace(
+        go.Contour(
+            x=t2axis,
+            y=t1axis,
+            z=SS,
+            ncontours=ncontours,
+            contours_coloring="lines",
+            line_width=2,
+            colorscale="Blues",
+            reversescale=True,
+            colorbar=dict(title="Density"),
+        )
+    )
+
+    # Set log scale on both axes
+    if t2axis is not None:
+        fig.update_xaxes(
+            type="log",
+            title="T2 axis",
+            tickmode="linear",
+            tickvals=np.logspace(np.log10(t2axis[0]), np.log10(t2axis[-1]), 3),
+            tickformat=".1e",
+            showline=True,
+            linewidth=1,
+            linecolor="black",
+        )
+
+    if t1axis is not None:
+        fig.update_yaxes(
+            type="log",
+            title="T1 axis",
+            tickmode="linear",
+            tickvals=np.logspace(np.log10(t1axis[0]), np.log10(t1axis[-1]), 3),
+            tickformat=".1e",
+            showline=True,
+            linewidth=1,
+            linecolor="black",
+        )
+
+    # Add a line for T1=T2 as a dotted line
+    if t2axis is not None and t1axis is not None:
+        fig.add_shape(
+            type="line",
+            x0=t2axis[0],
+            y0=t1axis[0],
+            x1=t2axis[-1],
+            y1=t1axis[-1],
+            line=dict(dash="dot", width=1, color="black"),
+        )
+
+    fig.update_layout(
+        title="Density Intensity Maps",
+        width=600,
+        height=600,
+        xaxis=dict(
+            type="log",
+            title="T2 axis",
+            tickmode="linear",
+            tickvals=np.logspace(np.log10(t2axis[0]), np.log10(t2axis[-1]), 3),
+            tickformat=".1e",
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+        )
+        if t2axis is not None
+        else None,
+        yaxis=dict(
+            type="log",
+            title="T1 axis",
+            tickmode="linear",
+            tickvals=np.logspace(np.log10(t1axis[0]), np.log10(t1axis[-1]), 3),
+            tickformat=".1e",
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+        )
+        if t1axis is not None
+        else None,
+        xaxis2=dict(zeroline=False, domain=[0.85, 1], showgrid=False),
+    )
+
     return fig
 
 
