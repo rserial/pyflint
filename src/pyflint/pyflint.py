@@ -63,7 +63,7 @@ def load_1d_decay(file_path: Path, file_name: str) -> tuple[np.ndarray, np.ndarr
 
 def perform_ilt_from_data(
     sample_name: str,
-    signal: np.ndarray,
+    decay: np.ndarray,
     tau1: float,
     dimKernel2D: int,
     alpha: float,
@@ -78,7 +78,7 @@ def perform_ilt_from_data(
 
     Args:
         sample_name (str): Name of the sample.
-        signal (np.ndarray): NMR signal data.
+        decay (np.ndarray): NMR signal data.
         tau1 (float): Delay time in the experiment.
         dimKernel2D (int): Dimension of the 2D kernel.
         alpha (float): Regularization parameter.
@@ -91,7 +91,7 @@ def perform_ilt_from_data(
     Returns:
         tuple[np.ndarray, np.ndarray]: T1 axis and the corresponding spectral density.
     """
-    signal = NMRsignal.load_from_data(signal, tau1)
+    signal = NMRsignal.load_from_data(decay, tau1)
 
     flint = Flint(signal, dimKernel2D, kernel_name, alpha, t1_range, t2_range)
     flint.solve_flint()
