@@ -225,7 +225,12 @@ class Flint:
         if kernel_name in kernel_functions:
             kernel_function = kernel_functions[kernel_name]
 
-            if len(kernel_function) == 2 and t1range and t2range and self.signal.tau2:
+            if (
+                len(kernel_function) == 2
+                and t1range is not None
+                and t2range is not None
+                and self.signal.tau2 is not None
+            ):
                 self.t1axis = logarithm_t_range(t1range, kernel_shape[0])
                 self.t2axis = logarithm_t_range(t2range, kernel_shape[1])
                 self.t1kernel = self.set_kernel(kernel_function[0], self.signal.tau1, self.t1axis)
