@@ -60,6 +60,47 @@ def load_1d_decay(file_path: Path, file_name: str) -> tuple[np.ndarray, np.ndarr
     return time_axis, decay_data
 
 
+def perform_ilt_and_plot(
+    decay: np.ndarray,
+    tau1: np.ndarray,
+    dimKernel2D: Tuple[int, int],
+    alpha: float,
+    kernel_name: str,
+    t1_range: Tuple[float, float],
+    t2_range: Tuple[float, float],
+    plot_title: str,
+    tau2: np.ndarray = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Perform inverse Laplace transform (ILT) from given data.
+
+    Args:
+        decay (np.ndarray): Decay data.
+        tau1 (np.ndarray): Value of tau1 parameter.
+        dimKernel2D (int): Dimension of the 2D kernel.
+        alpha (float): Alpha parameter for ILT.
+        kernel_name (str): Name of the kernel.
+        t1_range (Tuple[float, float]): Range of T1 values.
+        t2_range (Tuple[float, float]): Range of T2 values.
+        plot_title (str): Title for the plot.
+        tau2 (np.ndarray): Value of tau2 parameter.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: ilt_t1_axis and corresponding ilt_data.
+    """
+    signal = NMRsignal.load_from_data(decay, tau1, tau2)
+
+    flint = Flint(signal, dimKernel2D, kernel_name, alpha, t1_range, t2_range)
+    flint.solve_flint()
+    fig_samplebase = flint.plot()
+    fig_samplebase.update_layout(title_text=plot_title)
+    fig_samplebase.show()
+
+    ilt_t1_axis = np.squeeze(flint.t1axis)
+    ilt_data = np.squeeze(flint.SS)
+    return ilt_t1_axis, ilt_data
+
+
 class NMRsignal:
     """Represents an NMR signal with time constants and signal amplitudes."""
 

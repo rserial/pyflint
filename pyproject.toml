@@ -97,6 +97,7 @@ directory = "htmlcov"
 [tool.flakeheaven]
 format = "grouped"
 max_line_length = 99
+exclude = ["demo_1d_ILT.ipynb"]
 show_source = true
 docstring-convention = "google"
 extended_default_ignore = []
