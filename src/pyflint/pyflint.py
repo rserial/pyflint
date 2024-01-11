@@ -38,7 +38,7 @@ def kernel_t1_SR(tau: np.ndarray, t1: np.ndarray) -> np.ndarray:
     return 1 - 1 * np.exp(-np.outer(tau, 1 / t1))
 
 
-def logarithm_t_range(t_range: np.ndarray, kernel_dim: int) -> np.ndarray:
+def logarithm_t_range(t_range: Tuple[float, float], kernel_dim: int) -> np.ndarray:
     """Generates a logarithmic time range."""
     return np.logspace(np.log10(t_range[0]), np.log10(t_range[1]), num=kernel_dim)
 
@@ -67,9 +67,9 @@ def perform_ilt_and_plot(
     alpha: float,
     kernel_name: str,
     t1_range: Tuple[float, float],
-    t2_range: Tuple[float, float],
+    t2_range: Optional[Tuple[float, float]],
     plot_title: str,
-    tau2: np.ndarray = None,
+    tau2: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Perform inverse Laplace transform (ILT) from given data.
@@ -83,7 +83,7 @@ def perform_ilt_and_plot(
         t1_range (Tuple[float, float]): Range of T1 values.
         t2_range (Tuple[float, float]): Range of T2 values.
         plot_title (str): Title for the plot.
-        tau2 (np.ndarray): Value of tau2 parameter.
+        tau2 (Optional[np.ndarray]): Value of tau2 parameter.
 
     Returns:
         Tuple[np.ndarray, np.ndarray]: ilt_t1_axis and corresponding ilt_data.
@@ -215,8 +215,8 @@ class Flint:
         kernel_shape: tuple[int, int],
         kernel_name: str,
         alpha: float,
-        t1range: Optional[np.ndarray],
-        t2range: Optional[np.ndarray] = None,
+        t1range: Optional[Tuple[float, float]],
+        t2range: Optional[Tuple[float, float]] = None,
         SS: Optional[np.ndarray] = None,
         tol: float = 1e-5,
         maxiter: int = 100001,
@@ -229,8 +229,8 @@ class Flint:
             kernel_shape (Tuple[int, int]): The dimensions of the 2D kernel.
             kernel_name (str): The name of the kernel function to be used.
             alpha (float): The (Tikhonov) regularization parameter.
-            t1range (Optional[np.ndarray]): The range of T1 relaxation times.
-            t2range (Optional[np.ndarray]): The range of T2 relaxation times.
+            t1range (Optional[Tuple[float, float]]): The range of T1 relaxation times.
+            t2range (Optional[Tuple[float, float]]): The range of T2 relaxation times.
             SS (Optional[np.ndarray]): An optional starting estimate.
             tol (float): The relative change between successive calculations for exit.
             maxiter (int): The maximum number of iterations. Defaults to 100001.

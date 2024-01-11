@@ -1122,7 +1122,7 @@ files = [
 name = "invoke"
 version = "2.2.0"
 description = "Pythonic task execution"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -3267,4 +3267,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.12,>=3.8"
-content-hash = "3d134b2a5123ede5c913f0b393200cfdea5993372e7469e201f882d49ac3ec57"
+content-hash = "39e140af49df097068d093b875cfc8ee2b935795c627613beedc1ed9aeb6c495"

@@ -38,6 +38,7 @@ numpy = ">=1.22"
 plotly = "^5.14.1"
 scipy = "^1.10.1"
 nbformat = "^5.8.0"
+invoke = "^2.2.0"
 
 
 [tool.poetry.dev-dependencies]
