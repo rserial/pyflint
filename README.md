@@ -24,13 +24,12 @@ This module provides a Python implementation of FLINT, a fast algorithm for esti
 C. Eccles, who developed an adaptive truncation method for matrix decompositions to
 efficiently estimate NMR relaxation distributions.
 
-For more information on FLINT algorithm, see:
-- <https://github.com/paultnz/flint>
-- P.D. Teal and C. Eccles. Adaptive truncation of matrix decompositions and efficient
-  estimation of NMR relaxation distributions. Inverse Problems, 31(4):045010, April
-  2015. <http://dx.doi.org/10.1088/0266-5611/31/4/045010>
+For more information on the FLINT algorithm, refer to the [official FLINT repository (Matlab)](https://github.com/paultnz/flint) and the paper by P.D. Teal and C. Eccles titled "Adaptive truncation of matrix decompositions and efficient estimation of NMR relaxation distributions" [published in Inverse Problems (April 2015)](http://dx.doi.org/10.1088/0266-5611/31/4/045010).
 
-pyflint is based on the Flint class, which provides a simple approach to perform an inverse Laplace transform. The class can be used to perform 1D/2D inverse Laplace transforms of NMR data using various types of kernel functions, including:
+
+## Features
+
+pyflint is built around the Flint class, which provides a simple approach to perform an inverse Laplace transform for 1D and 2D relaxation NMR data. Key features include:
 
 - `T2`: T2 relaxation 
 - `T1IR`: T1 relaxation for inversion recovery experiments
@@ -44,9 +43,13 @@ pyflint is based on the Flint class, which provides a simple approach to perform
 * Free software: GNU General Public License v3
 
 ## Quickstart
+Check out the [notebooks](./notebooks) directory for Jupyter notebooks demonstrating how to use this library.
 
-See [notebooks](./notebooks) directory for jupyter notebooks showing how to use this library.
+## Installation
 
+```
+pip install git+https://github.com/rserial/pyflint.git
+```
 ## Credits
 
 This package was created with [Cookiecutter][cookiecutter] and the [fedejaure/cookiecutter-modern-pypackage][cookiecutter-modern-pypackage] project template.
