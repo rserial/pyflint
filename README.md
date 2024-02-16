@@ -37,11 +37,6 @@ pyflint is built around the Flint class, which provides a simple approach to per
 - `T1IRT2`/`T1SRT2`: T1-T2 2D relaxation maps for inversion/saturation recovery-T2 experiments
 - `T2T2`: T2-T2 2D relaxation maps T2-T2 experiments
 
-
-* GitHub repo: <https://github.com/rserial/pyflint.git>
-* Documentation: <https://pyflint.readthedocs.io>
-* Free software: GNU General Public License v3
-
 ## Quickstart
 Check out the [notebooks](./notebooks) directory for Jupyter notebooks demonstrating how to use this library.
 
@@ -56,3 +51,6 @@ This package was created with [Cookiecutter][cookiecutter] and the [fedejaure/co
 
 [cookiecutter]: https://github.com/cookiecutter/cookiecutter
 [cookiecutter-modern-pypackage]: https://github.com/fedejaure/cookiecutter-modern-pypackage
+
+## License
+Free software: GNU General Public License v3
