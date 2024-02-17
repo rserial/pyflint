@@ -14,6 +14,7 @@ For more information on FLINT, see:
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -52,7 +53,7 @@ def perform_ilt_and_plot(
     Returns:
         Tuple[np.ndarray, np.ndarray]: ilt_t1_axis and corresponding ilt_data.
     """
-    signal = NMRsignal.load_from_data(decay, tau1, tau2)
+    signal = FlintSignal.load_from_data(decay, tau1, tau2)
 
     flint = Flint(signal, dimKernel2D, kernel_name, alpha, t1_range, t2_range)
     flint.solve_flint()
@@ -65,8 +66,8 @@ def perform_ilt_and_plot(
     return ilt_t1_axis, ilt_data
 
 
-class NMRsignal:
-    """Represents an NMR signal with time constants and signal amplitudes."""
+class FlintSignal:
+    """Represents a Flint compatible signal with time constants and signal amplitudes."""
 
     def __init__(
         self, signal: np.ndarray, tau1: np.ndarray, tau2: Optional[np.ndarray] = None
@@ -91,8 +92,8 @@ class NMRsignal:
     @classmethod
     def load_from_data(
         cls, signal: np.ndarray, tau1: np.ndarray, tau2: Optional[np.ndarray] = None
-    ) -> NMRsignal:
-        """Constructs an NMRsignal object from time constants and signal amplitudes."""
+    ) -> FlintSignal:
+        """Constructs an FlintSignal object from time constants and signal amplitudes."""
         if signal.ndim == 1:
             signal = signal.reshape(signal.shape[0], 1)
         if tau1.ndim != 1 or (tau2 is not None and tau2.ndim != 1):
@@ -106,8 +107,8 @@ class NMRsignal:
         return cls(signal, tau1, tau2)
 
     @classmethod
-    def load_from_1d_txtfile(cls, file_path: str) -> NMRsignal:
-        """Constructs an NMRsignal object from a file."""
+    def load_from_1d_txtfile(cls, file_path: str) -> FlintSignal:
+        """Constructs an FlintSignal object from a file."""
         data = np.loadtxt(file_path)
         tau1 = data[:, 0]
         signal = data[:, 1] + 1j * data[:, 2] if data.shape[1] > 2 else data[:, 1] + 1j * 0
@@ -122,14 +123,14 @@ class NMRsignal:
         np.savetxt(file_path, data)
 
     @classmethod
-    def average_signals(cls, dir_list: List[str]) -> NMRsignal:
+    def average_signals(cls, dir_list: List[str]) -> FlintSignal:
         """Averages a list of NMR signals from 1D txt files.
 
         Args:
             dir_list (List[str]): A list of file paths.
 
         Returns:
-            NMRsignal: An NMRsignal object with the averaged signal.
+            FlintSignal: An FlintSignal object with the averaged signal.
         """
         signals = [cls.load_from_1d_txtfile(dir_path) for dir_path in dir_list]
 
@@ -152,7 +153,7 @@ class Flint:
     A class for performing 1D/2D Inverse Laplace Transform of NMR data.
 
     Attributes:
-        nmr_signal (NMRsignal): The 2D array of NMR signal to be processed.
+        flint_signal (NMRsignal): The 2D array of NMR signal to be processed.
         kernel_shape (tuple[int, int]): The dimensions of the 2D kernel,
           given as (t1kernel_dim, t2kernel_dim).
         kernel_name (str): The name of the kernel function to be used for
@@ -175,7 +176,7 @@ class Flint:
 
     def __init__(
         self,
-        nmr_signal: NMRsignal,
+        flint_signal: FlintSignal,
         kernel_shape: tuple[int, int],
         kernel_name: str,
         alpha: float,
@@ -189,7 +190,7 @@ class Flint:
         """Initialize a new Flint object.
 
         Args:
-            nmr_signal (NMRsignal): The 2D array of NMR signal to be processed.
+            flint_signal (FlintSignal): The 2D array of NMR signal to be processed.
             kernel_shape (Tuple[int, int]): The dimensions of the 2D kernel.
             kernel_name (str): The name of the kernel function to be used.
             alpha (float): The (Tikhonov) regularization parameter.
@@ -212,7 +213,7 @@ class Flint:
             "T2": [kernels.kernel_t2],
         }
 
-        self.signal = nmr_signal
+        self.signal = flint_signal
         self.kernel_type = kernel_name
         self.alpha = alpha
         self.tol = tol
@@ -304,23 +305,6 @@ class Flint:
                 if np.abs(resd) < self.tol:
                     break
 
-    def plot(self) -> go.Figure:
-        """Plots the result of the inverse Laplace transform.
-
-        Returns:
-            A plotly figure object.
-        """
-        plotting_functions: Dict[str, Callable[..., Tuple[Any, ...]]] = {
-            "T2": plot.plot_T2_ILT,
-            "T1IR": plot.plot_T1IR_ILT,
-            "T1SR": plot.plot_T1SR_ILT,
-            "T1IRT2": plot.plot_2DILT,
-        }
-
-        if self.kernel_type in plotting_functions:
-            figure = plotting_functions[self.kernel_type](self.SS, self.t1axis, self.t2axis)
-            return figure
-
     def calculate_lipschitz_constant(self, K1K1: np.ndarray, K2K2: np.ndarray) -> float:
         """Calculates the Lipschitz constant for the given kernel operators `K1K1` and `K2K2`.
 
@@ -362,6 +346,94 @@ class Flint:
         SL = SL / LL
         SL = K1K1 @ SL @ K2K2
         return SL
+
+    def plot(self) -> go.Figure:
+        """Plots the result of the inverse Laplace transform.
+
+        Returns:
+            A plotly figure object.
+        """
+        plotting_functions: Dict[str, Callable[..., Tuple[Any, ...]]] = {
+            "T2": plot.plot_T2_ILT,
+            "T1IR": plot.plot_T1IR_ILT,
+            "T1SR": plot.plot_T1SR_ILT,
+            "T1IRT2": plot.plot_2DILT,
+        }
+
+        if self.kernel_type in plotting_functions:
+            figure = plotting_functions[self.kernel_type](self.SS, self.t1axis, self.t2axis)
+            return figure
+
+    def save_to_par_file(self, file_path: str) -> None:
+        """Saves FLINT parameters and array data to a parameter (par) file.
+
+        Args:
+            file_path (str): The path to save the par file.
+        """
+        with open(file_path, "w") as par_file:
+            # Write FLINT parameters
+            par_file.write("# FLINT Parameters\n")
+            par_file.write(f"# Date: {datetime.now().strftime('%Y-%m-%d')}\n")
+            par_file.write(f"# Kernel name: {self.kernel_type}")
+            par_file.write(f"# Dimension: {self.dim_kernel2d[0]}x{self.dim_kernel2d[1]}\n")
+            par_file.write(f"# Alpha: {self.alpha}\n")
+            par_file.write(f"# Residuals: {self.resida}\n")
+
+            # Write T1 and T2 axis if available
+            if self.t1axis:
+                par_file.write(f"# t1 axis: {self.t1axis}\n")
+            if self.t2axis:
+                par_file.write(f"# t2 axis: {self.t2axis}\n")
+
+            # Write array data
+            par_file.write("array_data:\n")
+            np.savetxt(par_file, self.SS, delimiter=",", fmt="%f")
+
+    def load_from_par_file(
+        self, file_path: str
+    ) -> Tuple[dict, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+        """Loads parameters, array data, t1axis, and t2axis from a parameter (par) file.
+
+        Args:
+            file_path (str): The path to the par file.
+
+        Returns:
+            Tuple[dict, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+                A tuple containing a dictionary of parameters, the array data, t1axis, and t2axis.
+        """
+        ilt_parameters = {}
+        ilt_array_data = None
+        ilt_t1axis = None
+        ilt_t2axis = None
+
+        with open(file_path, "r") as par_file:
+            for line in par_file:
+                line = line.strip()
+                if not line or line.startswith("#") or line.lower() == "arraydata:":
+                    continue
+
+                if line.lower().startswith("array_data:"):
+                    # Array data section begins, read array data
+                    ilt_array_data = np.loadtxt(par_file, delimiter=",")
+                    break
+
+                # Check for t1axis and t2axis
+                if line.lower().startswith("# t1 axis:"):
+                    ilt_t1axis = np.array(line.split(":")[1].strip().split(","), dtype=float)
+                    continue
+                elif line.lower().startswith("# t2 axis:"):
+                    ilt_t2axis = np.array(line.split(":")[1].strip().split(","), dtype=float)
+                    continue
+
+                # Split the line into key-value pairs
+                key, value = line.split(":", 1)
+                key = key.strip().lower()
+                value = value.strip()
+
+                # Store the parameters in a dictionary
+                ilt_parameters[key] = value
+
+        return ilt_parameters, ilt_array_data, ilt_t1axis, ilt_t2axis
 
     def set_kernel(
         self,
