@@ -14,7 +14,6 @@ For more information on FLINT, see:
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -114,13 +113,6 @@ class FlintSignal:
         signal = data[:, 1] + 1j * data[:, 2] if data.shape[1] > 2 else data[:, 1] + 1j * 0
         tau2 = None
         return cls.load_from_data(signal, tau1, tau2)
-
-    def save_to_1d_txtfile(self, file_path: str) -> None:
-        """Saves the NMRsignal object to a 1D txt file."""
-        signal = self.signal.ravel()
-        tau1 = self.tau1
-        data = np.column_stack((tau1, signal))
-        np.savetxt(file_path, data)
 
     @classmethod
     def average_signals(cls, dir_list: List[str]) -> FlintSignal:
@@ -363,77 +355,6 @@ class Flint:
         if self.kernel_type in plotting_functions:
             figure = plotting_functions[self.kernel_type](self.SS, self.t1axis, self.t2axis)
             return figure
-
-    def save_to_par_file(self, file_path: str) -> None:
-        """Saves FLINT parameters and array data to a parameter (par) file.
-
-        Args:
-            file_path (str): The path to save the par file.
-        """
-        with open(file_path, "w") as par_file:
-            # Write FLINT parameters
-            par_file.write("# FLINT Parameters\n")
-            par_file.write(f"# Date: {datetime.now().strftime('%Y-%m-%d')}\n")
-            par_file.write(f"# Kernel name: {self.kernel_type}")
-            par_file.write(f"# Dimension: {self.dim_kernel2d[0]}x{self.dim_kernel2d[1]}\n")
-            par_file.write(f"# Alpha: {self.alpha}\n")
-            par_file.write(f"# Residuals: {self.resida}\n")
-
-            # Write T1 and T2 axis if available
-            if self.t1axis:
-                par_file.write(f"# t1 axis: {self.t1axis}\n")
-            if self.t2axis:
-                par_file.write(f"# t2 axis: {self.t2axis}\n")
-
-            # Write array data
-            par_file.write("array_data:\n")
-            np.savetxt(par_file, self.SS, delimiter=",", fmt="%f")
-
-    def load_from_par_file(
-        self, file_path: str
-    ) -> Tuple[dict, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
-        """Loads parameters, array data, t1axis, and t2axis from a parameter (par) file.
-
-        Args:
-            file_path (str): The path to the par file.
-
-        Returns:
-            Tuple[dict, Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
-                A tuple containing a dictionary of parameters, the array data, t1axis, and t2axis.
-        """
-        ilt_parameters = {}
-        ilt_array_data = None
-        ilt_t1axis = None
-        ilt_t2axis = None
-
-        with open(file_path, "r") as par_file:
-            for line in par_file:
-                line = line.strip()
-                if not line or line.startswith("#") or line.lower() == "arraydata:":
-                    continue
-
-                if line.lower().startswith("array_data:"):
-                    # Array data section begins, read array data
-                    ilt_array_data = np.loadtxt(par_file, delimiter=",")
-                    break
-
-                # Check for t1axis and t2axis
-                if line.lower().startswith("# t1 axis:"):
-                    ilt_t1axis = np.array(line.split(":")[1].strip().split(","), dtype=float)
-                    continue
-                elif line.lower().startswith("# t2 axis:"):
-                    ilt_t2axis = np.array(line.split(":")[1].strip().split(","), dtype=float)
-                    continue
-
-                # Split the line into key-value pairs
-                key, value = line.split(":", 1)
-                key = key.strip().lower()
-                value = value.strip()
-
-                # Store the parameters in a dictionary
-                ilt_parameters[key] = value
-
-        return ilt_parameters, ilt_array_data, ilt_t1axis, ilt_t2axis
 
     def set_kernel(
         self,
