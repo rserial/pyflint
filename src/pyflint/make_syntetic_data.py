@@ -9,7 +9,7 @@ from plotly.subplots import make_subplots  # type: ignore
 from pyflint import kernels
 
 
-def generate_smilyface_signal(
+def smilyface_signal(
     N1: int, N2: int, Nx: int, Ny: int, tau1min: float, tau1max: float, deltatau2: float
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generates something.
@@ -68,7 +68,7 @@ def generate_smilyface_signal(
     return tau1, tau2, signal_with_noise, T1a, T2a, Ftrue
 
 
-def generate_t_distribution_signal_decay(
+def time_distribution_signal_decay(
     signal_num_points: int,
     signal_time_lim: np.ndarray,
     kernel_name: str,
