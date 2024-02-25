@@ -1,6 +1,6 @@
 """Functions for generating syntetic data for pyflint."""
 
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import plotly.graph_objects as go  # type: ignore
@@ -103,7 +103,7 @@ def time_distribution_signal_decay(
     Raises:
         ValueError: If kernel_name is not in kernel_functions dictionary.
     """
-    kernel_functions: dict[str, list] = {
+    kernel_functions: Dict[str, list] = {
         "T1IR": [kernels.kernel_t1_IR],
         "T1SR": [kernels.kernel_t1_SR],
         "T2": [kernels.kernel_t2],
